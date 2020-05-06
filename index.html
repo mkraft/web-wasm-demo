@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+</head>
+
+<body>
+    <!-- page content -->
+    <script type="module">
+        import { Rego } from 'http://localhost:8000/opa.js';
+
+        async function getLoadedPolicy(data) {
+            const response = await fetch('http://localhost:8000/policy.wasm');
+            const arrayBuffer = await response.arrayBuffer();
+            const rego = new Rego();
+            const lp = await rego.load_policy(arrayBuffer)
+            lp.set_data(data);
+            return lp;
+        }
+
+        const data = {
+            post_restricted_channels: {
+                user: ["c3r1pae4hjrepx6qfghatmeekc"],
+                guest: [],
+                admin: []
+            }
+        };
+
+        getLoadedPolicy(data).then(loadedPolicy => {
+
+            const input = {
+                subject: {
+                    type: "person",
+                    attributes: { channel_role: "admin" }
+                },
+                operation: "write",
+                resource: {
+                    type: "post",
+                    attributes: { "channel_id": "foo" }
+                }
+            };
+
+            console.log(loadedPolicy.evaluate(input)[0].x)
+
+        });
+
+    </script>
+</body>
+
+</html>
